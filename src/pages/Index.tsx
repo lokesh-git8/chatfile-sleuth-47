@@ -75,11 +75,15 @@ const Index = () => {
       }
 
       const data = await response.json();
+      console.log('CrewAI response:', data); // Add this line for debugging
       
       // Update the "Processing" message with the actual response
       setMessages(prev => [
         ...prev.slice(0, -1), // Remove the "Processing" message
-        { text: data.response, isUser: false }
+        { 
+          text: typeof data.response === 'string' ? data.response : JSON.stringify(data.response), 
+          isUser: false 
+        }
       ]);
     } catch (error) {
       console.error('Error:', error);
