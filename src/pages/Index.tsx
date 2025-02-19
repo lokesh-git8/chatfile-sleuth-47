@@ -3,6 +3,7 @@ import { useState } from 'react';
 import FileUpload from '@/components/FileUpload';
 import ChatMessage from '@/components/ChatMessage';
 import ChatInput from '@/components/ChatInput';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Message {
   text: string;
@@ -12,6 +13,7 @@ interface Message {
 const Index = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
+  const { toast } = useToast();
 
   const handleFilesSelected = (newFiles: File[]) => {
     setFiles(prev => [...prev, ...newFiles]);
@@ -24,12 +26,47 @@ const Index = () => {
     ]);
   };
 
-  const handleSendMessage = (message: string) => {
-    setMessages(prev => [
-      ...prev,
-      { text: message, isUser: true },
-      { text: "I'm processing your question. Please wait a moment...", isUser: false }
-    ]);
+  const handleSendMessage = async (message: string) => {
+    try {
+      setMessages(prev => [
+        ...prev,
+        { text: message, isUser: true },
+        { text: "Processing your question...", isUser: false }
+      ]);
+
+      const response = await fetch('http://localhost:5000/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message,
+          files: files.map(f => f.name), // For now just sending file names
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from server');
+      }
+
+      const data = await response.json();
+      
+      // Update the "Processing" message with the actual response
+      setMessages(prev => [
+        ...prev.slice(0, -1), // Remove the "Processing" message
+        { text: data.response, isUser: false }
+      ]);
+    } catch (error) {
+      console.error('Error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to get response from the server. Please try again.",
+        variant: "destructive"
+      });
+      
+      // Remove the "Processing" message if there's an error
+      setMessages(prev => prev.slice(0, -1));
+    }
   };
 
   return (
