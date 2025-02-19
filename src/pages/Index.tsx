@@ -17,13 +17,11 @@ const Index = () => {
 
   const handleFilesSelected = async (newFiles: File[]) => {
     try {
-      // Create FormData to send files
       const formData = new FormData();
       newFiles.forEach(file => {
         formData.append('files', file);
       });
 
-      // Upload files to local CrewAI server
       const uploadResponse = await fetch('http://localhost:8000/upload', {
         method: 'POST',
         body: formData,
@@ -75,13 +73,26 @@ const Index = () => {
       }
 
       const data = await response.json();
-      console.log('CrewAI response:', data); // Add this line for debugging
       
-      // Update the "Processing" message with the actual response
+      // Extract the actual message content from the response
+      let formattedResponse = '';
+      if (typeof data === 'object') {
+        if (data.response) {
+          formattedResponse = data.response;
+        } else if (data.raw) {
+          formattedResponse = data.raw;
+        } else {
+          formattedResponse = JSON.stringify(data, null, 2);
+        }
+      } else {
+        formattedResponse = String(data);
+      }
+      
+      // Update messages with the formatted response
       setMessages(prev => [
         ...prev.slice(0, -1), // Remove the "Processing" message
         { 
-          text: typeof data.response === 'string' ? data.response : JSON.stringify(data.response), 
+          text: formattedResponse,
           isUser: false 
         }
       ]);
@@ -93,7 +104,6 @@ const Index = () => {
         variant: "destructive"
       });
       
-      // Remove the "Processing" message if there's an error
       setMessages(prev => prev.slice(0, -1));
     }
   };
