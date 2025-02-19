@@ -14,17 +14,20 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isUser }) => {
     try {
       // Try to parse if it's a JSON string
       const parsed = JSON.parse(msg);
+      if (typeof parsed === 'string') {
+        return parsed;
+      }
       if (parsed.response) {
-        return parsed.response;
+        return String(parsed.response);
       }
       if (parsed.raw) {
-        return parsed.raw;
+        return String(parsed.raw);
       }
       // If it's JSON but doesn't have expected fields, stringify it nicely
       return JSON.stringify(parsed, null, 2);
     } catch {
       // If it's not JSON, return the original message
-      return msg;
+      return String(msg);
     }
   };
 
