@@ -15,15 +15,40 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const { toast } = useToast();
 
-  const handleFilesSelected = (newFiles: File[]) => {
-    setFiles(prev => [...prev, ...newFiles]);
-    setMessages(prev => [
-      ...prev,
-      {
-        text: `Uploaded ${newFiles.length} file(s): ${newFiles.map(f => f.name).join(', ')}`,
-        isUser: false
+  const handleFilesSelected = async (newFiles: File[]) => {
+    try {
+      // Create FormData to send files
+      const formData = new FormData();
+      newFiles.forEach(file => {
+        formData.append('files', file);
+      });
+
+      // Upload files to local CrewAI server
+      const uploadResponse = await fetch('http://localhost:8000/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload files');
       }
-    ]);
+
+      setFiles(prev => [...prev, ...newFiles]);
+      setMessages(prev => [
+        ...prev,
+        {
+          text: `Uploaded ${newFiles.length} file(s): ${newFiles.map(f => f.name).join(', ')}`,
+          isUser: false
+        }
+      ]);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload Error",
+        description: "Failed to upload files. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSendMessage = async (message: string) => {
@@ -31,22 +56,22 @@ const Index = () => {
       setMessages(prev => [
         ...prev,
         { text: message, isUser: true },
-        { text: "Processing your question...", isUser: false }
+        { text: "CrewAI is processing your question...", isUser: false }
       ]);
 
-      const response = await fetch('http://localhost:5000/api/chat', {
+      const response = await fetch('http://localhost:8000/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           message,
-          files: files.map(f => f.name), // For now just sending file names
+          files: files.map(f => f.name),
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response from server');
+        throw new Error('Failed to get response from CrewAI');
       }
 
       const data = await response.json();
@@ -60,7 +85,7 @@ const Index = () => {
       console.error('Error:', error);
       toast({
         title: "Error",
-        description: "Failed to get response from the server. Please try again.",
+        description: "Failed to get response from CrewAI. Please try again.",
         variant: "destructive"
       });
       
