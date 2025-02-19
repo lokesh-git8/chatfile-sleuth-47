@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { User, Bot } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface ChatMessageProps {
   message: string;
@@ -14,7 +15,11 @@ const ChatMessage: React.FC<ChatMessageProps> = ({ message, isUser }) => {
         {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
       </div>
       <div className={`message-bubble ${isUser ? 'user-message' : 'bot-message'}`}>
-        <p className="text-sm">{message}</p>
+        <div className="text-sm prose prose-sm dark:prose-invert max-w-none">
+          <ReactMarkdown>
+            {message}
+          </ReactMarkdown>
+        </div>
       </div>
     </div>
   );
